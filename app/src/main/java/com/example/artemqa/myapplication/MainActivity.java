@@ -79,10 +79,8 @@ public class MainActivity extends AppCompatActivity {
             int idCitylIndex = c.getColumnIndex("city");
             do {
                 list.add( c.getString(idCitylIndex));
-                Log.d("SQL-NULL-RESULT", "0 rows");
             } while (c.moveToNext());
         } else
-            Log.d("SQL-NULL-RESULT", "0 rows");
           c.close();
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.spinner_item, list);
@@ -91,9 +89,6 @@ public class MainActivity extends AppCompatActivity {
         final Spinner spinner = (Spinner) findViewById(R.id.spinner);
         spinner.setAdapter(adapter);
         spinner.setPrompt("Выберите город");
-      //  spinner.setSelection(0);
-
-        Log.i("статус сети", ""+isOnline());
 
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -176,9 +171,7 @@ public class MainActivity extends AppCompatActivity {
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-        GpsStatus = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
-        Log.i("статус gps", ""+GpsStatus);
 
 
         if(!isOnline())  pd.setMessage("Нет доступа к интернету. Мы продолжим работу как только подключимся к интернету.");
@@ -190,15 +183,27 @@ public class MainActivity extends AppCompatActivity {
                 uiHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        if(isOnline()) {
-                            pd.setMessage("Загрузка...");
-                            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-                                }
+                        GpsStatus = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
-                            if (GpsStatus == true)
+                        boolean checkGPS = ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+
+                        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+                        }
+
+                        if(!GpsStatus){
+
+                            Toast.makeText(MainActivity.this, "Включите GPS", Toast.LENGTH_LONG).show();
+
+
+                        }
+
+                        if(isOnline() & checkGPS & GpsStatus) {
+                            pd.setMessage("Загрузка...");
+
+                            if (checkGPS & GpsStatus)
                                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000 * 3, 10, locationListener);
-                            else Toast.makeText(MainActivity.this, "", Toast.LENGTH_LONG).show();
+                            else Toast.makeText(MainActivity.this, "Включите GPS", Toast.LENGTH_LONG).show();
 
                             timer.cancel();
                             timer.purge();
@@ -208,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
 
-        }, 0L, 2000);
+        }, 0L, 3000);
     }
 
     private LocationListener locationListener = new LocationListener() {
@@ -303,10 +308,8 @@ public class MainActivity extends AppCompatActivity {
         //content.put("city", city);
         content.put("weather", weather);
        // Cursor c = db.rawQuery(" UPDATE " +DB.TABLE+" SET weather = '"+weather+"' WHERE city = '"+city+" '", null);
-
         int updCount = db.update(DB.TABLE, content, "id = ?", new String[] {id});
 
-        Log.d("Обновленение запили", "updated rows count = " + updCount);
 
     }
 
